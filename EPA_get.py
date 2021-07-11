@@ -6,6 +6,8 @@ import threading
 
 days_to_keep = 2
 
+
+# delete records that is older than days to keep variable
 def truncate_older_records():
     try:
         # Connecting to the DB
@@ -13,6 +15,7 @@ def truncate_older_records():
         connection = dbconnection().connect()
         cur = connection.cursor()
         dt = datetime.now() - timedelta(days=days_to_keep)
+        # delete template
         sql_del_template = f"DELETE from epa.air_monitor_data WHERE since_time < '{dt}';"
         print('Truncating Older Records')
         try:
@@ -31,13 +34,16 @@ def truncate_older_records():
             print('Connection is cleaned up.')
 
 
+# function that takes json data from epa and insert them into dt database
 def insert_epa_data(data):
     for record in data['records']:
         try:
+            # Connecting to the DB
             print('connecting to DT')
             connection = dbconnection().connect()
             cur = connection.cursor()
             print('connection successful')
+            # insert each parameter
             site_id = record['siteID']
             site_name = record['siteName']
             print(f"inserting {site_name}")
@@ -68,10 +74,11 @@ def daemon():
         truncate_older_records()
         api_key = '27db2814cda04ecf8e026c1542ad612a'
         url = 'https://gateway.api.epa.vic.gov.au/environmentMonitoring/v1/sites?environmentalSegment=air'
-
+        # getting data from epa api
         r = requests.get(url, headers={
+            # user-agent is needed otherwise epa refused to give a response
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0',
-            'X-API-Key': '27db2814cda04ecf8e026c1542ad612a'
+            'X-API-Key': api_key
         })
 
         data = r.json()
